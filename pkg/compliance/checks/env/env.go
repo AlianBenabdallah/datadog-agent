@@ -42,4 +42,5 @@ type Configuration interface {
 	EvaluateFromCache(e eval.Evaluatable) (interface{}, error)
 	IsLeader() bool
 	NodeLabels() map[string]string
+	ConfigDir() string
 }

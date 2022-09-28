@@ -60,6 +60,7 @@ func StartCompliance(hostname string, stopper startstop.Stopper, statsdClient *d
 		checks.MayFail(checks.WithDocker()),
 		checks.MayFail(checks.WithAudit()),
 		checks.WithStatsd(statsdClient),
+		checks.WithConfigDir(configDir),
 	}
 
 	if coreconfig.IsKubernetes() {

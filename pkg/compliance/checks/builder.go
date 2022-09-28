@@ -99,6 +99,14 @@ func WithHostname(hostname string) BuilderOption {
 	}
 }
 
+// WithConfigDir configures the configuration directory
+func WithConfigDir(configDir string) BuilderOption {
+	return func(b *builder) error {
+		b.configDir = configDir
+		return nil
+	}
+}
+
 // WithHostRootMount defines host root filesystem mount location
 func WithHostRootMount(hostRootMount string) BuilderOption {
 	return func(b *builder) error {
@@ -319,6 +327,7 @@ type builder struct {
 	pathMapper   *fileutils.PathMapper
 	etcGroupPath string
 	nodeLabels   map[string]string
+	configDir    string
 
 	suiteMatcher SuiteMatcher
 	ruleMatcher  RuleMatcher
@@ -652,6 +661,10 @@ func (b *builder) ShouldSkipRegoEval() bool {
 
 func (b *builder) Hostname() string {
 	return b.hostname
+}
+
+func (b *builder) ConfigDir() string {
+	return b.configDir
 }
 
 func (b *builder) EtcGroupPath() string {
