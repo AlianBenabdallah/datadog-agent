@@ -11,9 +11,6 @@ package http
 import (
 	"os"
 	"regexp"
-	"strconv"
-
-	"github.com/twmb/murmur3"
 
 	manager "github.com/DataDog/ebpf-manager"
 	"github.com/cilium/ebpf"
@@ -333,7 +330,7 @@ func (o *sslProgram) Start() {
 	}
 
 	// Setup shared library watcher and configure the appropriate callbacks
-	o.watcher = newSOWatcher(o.cfg.ProcRoot, o.perfHandler,
+	o.watcher = newSOWatcher(o.perfHandler,
 		soRule{
 			re:           regexp.MustCompile(`libssl.so`),
 			registerCB:   addHooks(o.manager, openSSLProbes),
@@ -362,9 +359,9 @@ func (o *sslProgram) Stop() {
 	o.perfHandler.Stop()
 }
 
-func addHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(string) error {
-	return func(libPath string) error {
-		uid := getUID(libPath)
+func addHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(pathIdentifier, string, string) error {
+	return func(id pathIdentifier, root string, path string) error {
+		uid := getUID(id)
 
 		for _, singleProbe := range probes {
 			for _, selector := range singleProbe.GetProbesIdentificationPairList() {
@@ -388,7 +385,7 @@ func addHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(str
 
 				newProbe := &manager.Probe{
 					ProbeIdentificationPair: identifier,
-					BinaryPath:              libPath,
+					BinaryPath:              root + path,
 				}
 				_ = m.AddHook("", newProbe)
 			}
@@ -401,9 +398,9 @@ func addHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(str
 	}
 }
 
-func removeHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(string) error {
-	return func(libPath string) error {
-		uid := getUID(libPath)
+func removeHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(pathIdentifier) error {
+	return func(lib pathIdentifier) error {
+		uid := getUID(lib)
 		for _, singleProbe := range probes {
 			for _, selector := range singleProbe.GetProbesIdentificationPairList() {
 				identifier := manager.ProbeIdentificationPair{
@@ -431,14 +428,8 @@ func removeHooks(m *errtelemetry.Manager, probes []manager.ProbesSelector) func(
 	}
 }
 
-func getUID(libPath string) string {
-	sum := murmur3.StringSum64(libPath)
-	hash := strconv.FormatInt(int64(sum), 16)
-	if len(hash) >= 5 {
-		return hash[len(hash)-5:]
-	}
-
-	return libPath
+func getUID(lib pathIdentifier) string {
+	return lib.Key()[:5]
 }
 
 func (o *sslProgram) GetAllUndefinedProbes() []manager.ProbeIdentificationPair {
