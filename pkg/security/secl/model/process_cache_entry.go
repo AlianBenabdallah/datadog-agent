@@ -9,6 +9,8 @@ import (
 	"container/list"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -247,18 +249,6 @@ func (p *ArgsEnvsCacheEntry) toArray() ([]string, bool) {
 	return values, truncated
 }
 
-func stringArraysEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 // ArgsEntry defines a args cache entry
 type ArgsEntry struct {
 	*ArgsEnvsCacheEntry
@@ -311,7 +301,7 @@ func (p *ArgsEntry) Equals(o *ArgsEntry) bool {
 	pa, _ := p.ToArray()
 	oa, _ := o.ToArray()
 
-	return stringArraysEqual(pa, oa)
+	return slices.Equal(pa, oa)
 }
 
 // EnvsEntry defines a args cache entry
@@ -422,5 +412,5 @@ func (p *EnvsEntry) Equals(o *EnvsEntry) bool {
 	pa, _ := p.ToArray()
 	oa, _ := o.ToArray()
 
-	return stringArraysEqual(pa, oa)
+	return slices.Equal(pa, oa)
 }
