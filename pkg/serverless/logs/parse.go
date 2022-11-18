@@ -133,7 +133,7 @@ func (l *LambdaLogAPIMessage) handlePlatformRecord(data map[string]interface{}, 
 	l.logType = typ
 	objectRecord, ok := data["record"].(map[string]interface{})
 	if !ok {
-		log.Error("LogMessage.UnmarshalJSON: can't read the record object")
+		log.Errorf("LogMessage.UnmarshalJSON: can't read the record object for %s event, unable to collect enhanced metrics", typ)
 		return
 	}
 	// all of these have the requestId
@@ -166,7 +166,7 @@ func (l *LambdaLogAPIMessage) handlePlatformStart(objectRecord map[string]interf
 func (l *LambdaLogAPIMessage) handlePlatformReport(objectRecord map[string]interface{}) {
 	metrics, ok := objectRecord["metrics"].(map[string]interface{})
 	if !ok {
-		log.Error("LogMessage.UnmarshalJSON: can't read the metrics object")
+		log.Error("LogMessage.UnmarshalJSON: can't read the metrics object for platform.report event, unable to collect enhanced metrics")
 		return
 	}
 	if v, ok := metrics["durationMs"].(float64); ok {
@@ -196,7 +196,7 @@ func (l *LambdaLogAPIMessage) handlePlatformRuntimeDone(objectRecord map[string]
 func (l *LambdaLogAPIMessage) handlePlatformRuntimeDoneSpans(objectRecord map[string]interface{}) {
 	spans, ok := objectRecord["spans"].([]interface{})
 	if !ok {
-		log.Error("LogMessage.UnmarshalJSON: can't read the spans object")
+		log.Error("LogMessage.UnmarshalJSON: can't read the spans object for platform.runtimeDone event, unable to collect response_latency or response_duration")
 		return
 	}
 	for _, span := range spans {
@@ -222,7 +222,7 @@ func (l *LambdaLogAPIMessage) handlePlatformRuntimeDoneSpans(objectRecord map[st
 func (l *LambdaLogAPIMessage) handlePlatformRuntimeDoneMetrics(objectRecord map[string]interface{}) {
 	metrics, ok := objectRecord["metrics"].(map[string]interface{})
 	if !ok {
-		log.Error("LogMessage.UnmarshalJSON: can't read the metrics object")
+		log.Error("LogMessage.UnmarshalJSON: can't read the metrics object for platform.runtimeDone event, unable to collect produced_bytes")
 		return
 	}
 	if v, ok := metrics["producedBytes"].(float64); ok {
@@ -234,7 +234,7 @@ func (l *LambdaLogAPIMessage) handlePlatformRuntimeDoneMetrics(objectRecord map[
 func (l *LambdaLogAPIMessage) handlePlatformInitReport(objectRecord map[string]interface{}) {
 	metrics, ok := objectRecord["metrics"].(map[string]interface{})
 	if !ok {
-		log.Error("LogMessage.UnmarshalJSON: can't read the metrics object")
+		log.Debug("LogMessage.UnmarshalJSON: can't read the metrics object")
 		return
 	}
 	if v, ok := metrics["durationMs"].(float64); ok {
