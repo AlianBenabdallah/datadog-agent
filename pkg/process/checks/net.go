@@ -140,19 +140,6 @@ func (c *ConnectionsCheck) getConnections() (*model.Connections, error) {
 	return tu.GetConnections(c.tracerClientID)
 }
 
-func (c *ConnectionsCheck) enrichConnections(conns []*model.Connection) []*model.Connection {
-	// Process create-times required to construct unique process hash keys on the backend
-	createTimeForPID := ProcessNotify.GetCreateTimes(connectionPIDs(conns))
-	for _, conn := range conns {
-		if _, ok := createTimeForPID[conn.Pid]; !ok {
-			createTimeForPID[conn.Pid] = 0
-		}
-
-		conn.PidCreateTime = createTimeForPID[conn.Pid]
-	}
-	return conns
-}
-
 func (c *ConnectionsCheck) getLastConnectionsByPID() map[int32][]*model.Connection {
 	if result := c.lastConnsByPID.Load(); result != nil {
 		return result.(map[int32][]*model.Connection)
@@ -420,17 +407,4 @@ func groupSize(total, maxBatchSize int) int32 {
 		groupSize++
 	}
 	return int32(groupSize)
-}
-
-func connectionPIDs(conns []*model.Connection) []int32 {
-	ps := make(map[int32]struct{})
-	for _, c := range conns {
-		ps[c.Pid] = struct{}{}
-	}
-
-	pids := make([]int32, 0, len(ps))
-	for pid := range ps {
-		pids = append(pids, pid)
-	}
-	return pids
 }
