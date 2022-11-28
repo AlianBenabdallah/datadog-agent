@@ -708,18 +708,6 @@ func TestUnmarshalJSONLogTypePlatformTelemetrySubscription(t *testing.T) {
 	assert.Equal(t, "", logMessage.logType)
 }
 
-func TestUnmarshalJSONLogTypePlatformTelemetrySubscription(t *testing.T) {
-	// with the telemetry api, these events should not exist
-	logMessage := &LambdaLogAPIMessage{}
-	raw, errReadFile := ioutil.ReadFile("./testdata/platform_telemetry.json")
-	if errReadFile != nil {
-		assert.Fail(t, "should be able to read the file")
-	}
-	err := logMessage.UnmarshalJSON(raw)
-	assert.Nil(t, err)
-	assert.Equal(t, "", logMessage.logType)
-}
-
 func TestUnmarshalJSONLogTypePlatformExtension(t *testing.T) {
 	// platform.extension events are not processed by the extension
 	logMessage := &LambdaLogAPIMessage{}
