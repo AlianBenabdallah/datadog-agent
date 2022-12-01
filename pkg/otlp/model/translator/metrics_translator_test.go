@@ -651,32 +651,6 @@ func TestFormatFloat(t *testing.T) {
 	}
 }
 
-func exampleSummaryDataPointSlice(ts pcommon.Timestamp, sum float64, count uint64) pmetric.SummaryDataPointSlice {
-	slice := pmetric.NewSummaryDataPointSlice()
-	point := slice.AppendEmpty()
-	point.SetCount(count)
-	point.SetSum(sum)
-	qSlice := point.QuantileValues()
-
-	qMin := qSlice.AppendEmpty()
-	qMin.SetQuantile(0.0)
-	qMin.SetValue(0)
-
-	qMedian := qSlice.AppendEmpty()
-	qMedian.SetQuantile(0.5)
-	qMedian.SetValue(100)
-
-	q999 := qSlice.AppendEmpty()
-	q999.SetQuantile(0.999)
-	q999.SetValue(500)
-
-	qMax := qSlice.AppendEmpty()
-	qMax.SetQuantile(1)
-	qMax.SetValue(600)
-	point.SetTimestamp(ts)
-	return slice
-}
-
 const (
 	testHostname     = "res-hostname"
 	fallbackHostname = "fallbackHostname"
