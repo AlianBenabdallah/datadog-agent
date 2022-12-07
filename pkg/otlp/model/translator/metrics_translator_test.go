@@ -33,6 +33,7 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/otlp/model/source"
 	"github.com/DataDog/datadog-agent/pkg/quantile"
 	"github.com/DataDog/datadog-agent/pkg/quantile/summary"
+	"github.com/DataDog/datadog-agent/pkg/trace/pb"
 )
 
 func TestIsCumulativeMonotonic(t *testing.T) {
@@ -534,6 +535,20 @@ func TestMapDoubleMonotonicReportFirstValue(t *testing.T) {
 	)
 }
 
+func TestMapAPMStats(t *testing.T) {
+	consumer := &mockFullConsumer{}
+	logger, err := zap.NewDevelopment()
+	require.NoError(t, err)
+	tr := newTranslator(t, logger)
+	md := tr.StatsPayloadToMetrics(pb.StatsPayload{
+		Stats: []pb.ClientStatsPayload{statsPayloads[0], statsPayloads[1]},
+	})
+
+	ctx := context.Background()
+	tr.MapMetrics(ctx, md, consumer)
+	require.Equal(t, consumer.apmstats, statsPayloads)
+}
+
 func TestMapDoubleMonotonicReportDiffForFirstValue(t *testing.T) {
 	ctx := context.Background()
 	tr := newTranslator(t, zap.NewNop())
@@ -584,6 +599,11 @@ var _ SketchConsumer = (*mockFullConsumer)(nil)
 type mockFullConsumer struct {
 	mockTimeSeriesConsumer
 	sketches []sketch
+	apmstats []pb.ClientStatsPayload
+}
+
+func (c *mockFullConsumer) ConsumeAPMStats(p pb.ClientStatsPayload) {
+	c.apmstats = append(c.apmstats, p)
 }
 
 func (c *mockFullConsumer) ConsumeSketch(_ context.Context, dimensions *Dimensions, ts uint64, sk *quantile.Sketch) {
