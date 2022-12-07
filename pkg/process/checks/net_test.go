@@ -13,8 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	ddconfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/network/dns"
 	"github.com/DataDog/datadog-agent/pkg/process/config"
+	"github.com/DataDog/datadog-agent/pkg/process/metadata/parser"
+	"github.com/DataDog/datadog-agent/pkg/process/procutil"
 )
 
 func makeConnection(pid int32) *model.Connection {
@@ -601,4 +604,73 @@ func TestNetworkConnectionTags(t *testing.T) {
 
 	assert.Equal(t, 8, total)
 	require.EqualValues(t, expectedTags, foundTags)
+}
+
+func TestNetworkConnectionTagsWithService(t *testing.T) {
+	conns := makeConnections(1)
+	tags := []string{"tag0"}
+	conns[0].Tags = []uint32{0}
+
+	expectedTags := []string{"tag0", "service:my-server"}
+
+	procsByPid := map[int32]*procutil.Process{
+		conns[0].Pid: {
+			Pid:     conns[0].Pid,
+			Cmdline: []string{"./my-server.sh"},
+		},
+	}
+	mockConfig := ddconfig.Mock(t)
+	mockConfig.Set("service_monitoring_config.process_service_inference.enabled", true)
+
+	cfg := config.NewDefaultAgentConfig()
+	ex := parser.NewServiceExtractor()
+	ex.Extract(procsByPid)
+
+	chunks := batchConnections(cfg, 0, conns, nil, "nid", nil, nil, nil, nil, tags, nil, ex)
+
+	assert.Len(t, chunks, 1)
+	connections := chunks[0].(*model.CollectorConnections)
+	assert.Len(t, connections.Connections, 1)
+	require.EqualValues(t, expectedTags, connections.GetConnectionsTags(connections.Connections[0].TagsIdx))
+}
+
+func TestConvertAndEnrichWithServiceTags(t *testing.T) {
+	tags := []string{"tag0", "tag1", "tag2"}
+
+	tests := []struct {
+		name       string
+		tagOffsets []uint32
+		serviceTag string
+		expected   []string
+	}{
+		{
+			name:       "no tags",
+			tagOffsets: nil,
+			serviceTag: "",
+			expected:   []string{},
+		},
+		{
+			name:       "convert tags only",
+			tagOffsets: []uint32{0, 2},
+			serviceTag: "",
+			expected:   []string{"tag0", "tag2"},
+		},
+		{
+			name:       "convert service tag only",
+			tagOffsets: nil,
+			serviceTag: "service:dogfood",
+			expected:   []string{"service:dogfood"},
+		},
+		{
+			name:       "convert tags with service tag",
+			tagOffsets: []uint32{0, 2},
+			serviceTag: "service:doge",
+			expected:   []string{"tag0", "tag2", "service:doge"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, convertAndEnrichWithServiceTags(tags, tt.tagOffsets, tt.serviceTag))
+		})
+	}
 }
