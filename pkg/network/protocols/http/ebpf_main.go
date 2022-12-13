@@ -169,6 +169,7 @@ func newEBPFProgram(c *config.Config, offsets []manager.ConstantEditor, sockFD *
 	ebpfSubprograms := []subprogram{
 		newGoTLSProgram(c),
 		newSSLProgram(c, sockFD),
+		newJavaTLSProgram(c),
 	}
 
 	program := &ebpfProgram{
