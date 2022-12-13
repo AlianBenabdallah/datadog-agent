@@ -52,6 +52,7 @@ def build(
     go_mod="mod",
     skip_assets=False,
     static=False,
+    build_tags=[],
 ):
     """
     Build the security agent
@@ -86,7 +87,7 @@ def build(
     }
 
     ldflags += ' '.join([f"-X '{main + key}={value}'" for key, value in ld_vars.items()])
-    build_tags = get_default_build_tags(
+    build_tags += get_default_build_tags(
         build="security-agent"
     )  # TODO/FIXME: Arch not passed to preserve build tags. Should this be fixed?
 
