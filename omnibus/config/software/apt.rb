@@ -52,6 +52,12 @@ build do
   patch source: "disable_arch_check.patch", env: env
   patch source: "do_not_clean_pkgcache.patch", env: env
 
+  patch source: "triehash.patch", env: env, cwd: '/'
+  if File.exist? '/root/perl5/perlbrew/perls/perl-5.36.0/bin/perl'
+    patch source: "triehash-rpm.patch", env: env, cwd: '/'
+  end
+  command "chmod +x /usr/local/bin/triehash"
+
   cmake_options = [
     "-DDPKG_DATADIR=/usr/share/dpkg",
     "-DCMAKE_INSTALL_FULL_SYSCONFDIR:PATH=/etc",
