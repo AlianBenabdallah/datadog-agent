@@ -16,9 +16,9 @@ relative_path "db-#{version}"
 build do
   env = with_standard_compiler_flags(with_embedded_path)
 
+  update_config_guess(target: "#{project_dir}/build_unix")
 
-  configure_options = [
-  ]
+  configure_options = []
   configure(*configure_options, bin: "../dist/configure", env: env, cwd: "#{project_dir}/build_unix")
 
   make "-j #{workers}", env: env, cwd: "#{project_dir}/build_unix"
