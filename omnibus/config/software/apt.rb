@@ -14,6 +14,10 @@ dependency 'liblz4'
 dependency 'liblzma'
 dependency 'libxxhash'
 
+license 'GPLv2'
+license_file "COPYING"
+skip_transitive_dependency_licensing true
+
 version '2.5.4' do
   source url: 'https://github.com/Debian/apt/archive/refs/tags/2.5.4.tar.gz',
          sha512: '41c27e14c1a817ea578d88db50f1223a7add30c990fc9befb81aef27f735d75f53009cd914b11fca0a5c16deb9dc40c86fc91fb05b66c83e5a3ba9f647e3531c'
@@ -45,17 +49,15 @@ build do
   env["CXXFLAGS"] += " -std=c++11 -DDPKG_DATADIR=/usr/share/dpkg"
   env["CPPFLAGS"] += " -std=c++11 -DDPKG_DATADIR=/usr/share/dpkg"
   patch source: "no_doc.patch", env: env
-  patch source: "export_mmap.patch", env: env
-  # patch source: "hardcode_paths.patch", env: env
-  patch source: "log_opens.patch", env: env
-  patch source: "debug.patch", env: env
   patch source: "disable_arch_check.patch", env: env
-  patch source: "do_not_clean_pkgcache.patch", env: env
 
-  patch source: "triehash.patch", env: env, cwd: '/'
-  if File.exist? '/root/perl5/perlbrew/perls/perl-5.36.0/bin/perl'
-    patch source: "triehash-rpm.patch", env: env, cwd: '/'
+  if ! File.exist? '/usr/local/bin/triehash'
+    patch source: "triehash.patch", env: env, cwd: '/'
+    if File.exist? '/root/perl5/perlbrew/perls/perl-5.36.0/bin/perl'
+      patch source: "triehash-rpm.patch", env: env, cwd: '/'
+    end
   end
+
   command "chmod +x /usr/local/bin/triehash"
 
   cmake_options = [
@@ -63,7 +65,6 @@ build do
     "-DCMAKE_INSTALL_FULL_SYSCONFDIR:PATH=/etc",
     "-DCONF_DIR:PATH=/etc/apt",
     "-DCACHE_DIR:PATH=/opt/datadog-agent/run",
-    # "-DCACHE_DIR=/opt/datadog-agent/run",
     "-DSTATE_DIR:PATH=/var/lib/apt",
     "-DWITH_DOC=OFF",
     "-DUSE_NLS=OFF",
@@ -72,10 +73,6 @@ build do
   ]
   cmake(*cmake_options, env: env)
 
-  #update_config_guess
-
   configure_options = [
   ]
-  #configure(*configure_options, env: env)
-
 end
