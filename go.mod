@@ -426,9 +426,19 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require github.com/DataDog/go-libddwaf v0.0.0-20221118110754-0372d7c76b8a
+require (
+	github.com/DataDog/go-libddwaf v0.0.0-20221118110754-0372d7c76b8a
+	go.mongodb.org/mongo-driver v1.11.1
+)
 
-require gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
+require (
+	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
+	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
+	github.com/xdg-go/scram v1.1.1 // indirect
+	github.com/xdg-go/stringprep v1.0.3 // indirect
+	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
+	gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
+)
 
 replace github.com/pahanini/go-grpc-bidirectional-streaming-example v0.0.0-20211027164128-cc6111af44be => github.com/DataDog/go-grpc-bidirectional-streaming-example v0.0.0-20221024060302-b9cf785c02fe
 

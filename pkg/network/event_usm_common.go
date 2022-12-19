@@ -13,5 +13,6 @@ const (
 	ProtocolHTTP
 	ProtocolHTTP2
 	ProtocolTLS
+	ProtocolMongo = iota + 1
 	MaxProtocols
 )

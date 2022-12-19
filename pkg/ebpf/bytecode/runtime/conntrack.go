@@ -4,4 +4,4 @@
 
 package runtime
 
-var Conntrack = newAsset("conntrack.c", "08d28bd882f7d464789a54297443d56ab07d04b74b0cb9aa238a93b0be272372")
+var Conntrack = newAsset("conntrack.c", "255370edee2ef60565bf2d3c684bea4990445b76b2c9e02efeefa7239d2b543e")

@@ -34,6 +34,7 @@ const (
 	ProtocolHTTP    ProtocolType = C.PROTOCOL_HTTP
 	ProtocolHTTP2   ProtocolType = C.PROTOCOL_HTTP2
 	ProtocolTLS     ProtocolType = C.PROTOCOL_TLS
+	ProtocolMONGO   ProtocolType = C.PROTOCOL_MONGO
 	ProtocolMax     ProtocolType = C.MAX_PROTOCOLS
 )
 

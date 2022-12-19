@@ -1,0 +1,11 @@
+version: '3'
+services:
+  mongodb-primary:
+    image: 'bitnami/mongodb:4.4-debian-10'
+    ports:
+      - ${MONGO_ADDR}:${MONGO_PORT}:27017
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=${MONGO_ADDR}
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+      - MONGODB_REPLICA_SET_KEY=${MONGO_REPLICA_SET_KEY}

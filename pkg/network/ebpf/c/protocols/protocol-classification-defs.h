@@ -15,6 +15,29 @@
 // The minimal HTTP request has 16 characters: GET x HTTP/1.1\r\n
 #define HTTP_MIN_SIZE 16
 
+// Reference:
+// https://docs.mongodb.com/manual/reference/mongodb-wire-protocol/#std-label-wp-request-opcodes.
+// Note: Response side inference for Mongo is not robust, and is not attempted to avoid
+// confusion with other protocols, especially MySQL.
+#define MONGO_OP_UPDATE 2001
+#define MONGO_OP_INSERT 2002
+#define MONGO_OP_RESERVED 2003
+#define MONGO_OP_QUERY 2004
+#define MONGO_OP_GET_MORE 2005
+#define MONGO_OP_DELETE 2006
+#define MONGO_OP_KILL_CURSORS 2007
+#define MONGO_OP_COMPRESSED 2012
+#define MONGO_OP_MSG 2013
+
+#define MONGO_HEADER_LENGTH 16
+
+typedef struct {
+    __s32   message_length; // total message size, including this
+    __s32   request_id;     // identifier for this message
+    __s32   response_to;    // requestID from the original request (used in responses from db)
+    __s32   op_code;        // request type - see table below for details
+} mongo_msg_header;
+
 // The enum below represents all different protocols we know to classify.
 // We set the size of the enum to be 8 bits, by adding max value (max uint8 which is 255) and
 // `__attribute__ ((packed))` to tell the compiler to use as minimum bits as needed. Due to our max
@@ -25,6 +48,7 @@ typedef enum {
     PROTOCOL_HTTP,
     PROTOCOL_HTTP2,
     PROTOCOL_TLS,
+    PROTOCOL_MONGO = 6,
     //  Add new protocols before that line.
     MAX_PROTOCOLS,
     __MAX_UINT8 = 255,
