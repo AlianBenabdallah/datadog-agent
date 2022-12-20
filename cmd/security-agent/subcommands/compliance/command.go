@@ -12,33 +12,30 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 
-	"github.com/DataDog/datadog-agent/cmd/security-agent/app/common"
-	"github.com/DataDog/datadog-agent/cmd/security-agent/app/subcommands/check"
+	"github.com/DataDog/datadog-agent/cmd/security-agent/command"
+	"github.com/DataDog/datadog-agent/cmd/security-agent/subcommands/check"
 	"github.com/DataDog/datadog-agent/comp/core"
 	"github.com/DataDog/datadog-agent/comp/core/config"
-	compconfig "github.com/DataDog/datadog-agent/comp/core/config"
 	"github.com/DataDog/datadog-agent/comp/core/log"
-	complog "github.com/DataDog/datadog-agent/comp/core/log"
 	"github.com/DataDog/datadog-agent/pkg/compliance/event"
-	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 	"github.com/DataDog/datadog-agent/pkg/util/startstop"
 )
 
-func Commands(globalParams *common.GlobalParams) []*cobra.Command {
+func Commands(globalParams *command.GlobalParams) []*cobra.Command {
 	complianceCmd := &cobra.Command{
 		Use:   "compliance",
 		Short: "Compliance Agent utility commands",
 	}
 
 	complianceCmd.AddCommand(complianceEventCommand(globalParams))
-	complianceCmd.AddCommand(check.SecAgentCommands(globalParams)...)
+	complianceCmd.AddCommand(check.Commands(globalParams)...)
 
 	return []*cobra.Command{complianceCmd}
 }
 
-type eventCliParams struct {
-	*common.GlobalParams
+type cliParams struct {
+	*command.GlobalParams
 
 	sourceName string
 	sourceType string
@@ -46,8 +43,8 @@ type eventCliParams struct {
 	data       []string
 }
 
-func complianceEventCommand(globalParams *common.GlobalParams) *cobra.Command {
-	eventArgs := &eventCliParams{
+func complianceEventCommand(globalParams *command.GlobalParams) *cobra.Command {
+	eventArgs := &cliParams{
 		GlobalParams: globalParams,
 	}
 
@@ -58,8 +55,9 @@ func complianceEventCommand(globalParams *common.GlobalParams) *cobra.Command {
 			return fxutil.OneShot(eventRun,
 				fx.Supply(eventArgs),
 				fx.Supply(core.BundleParams{
-					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfPathArray),
-					LogParams:    log.LogForOneShot(common.LoggerName, "info", true)}),
+					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfigFilePaths),
+					LogParams:    log.LogForOneShot(command.LoggerName, "info", true),
+				}),
 				core.Bundle,
 			)
 		},
@@ -77,16 +75,16 @@ func complianceEventCommand(globalParams *common.GlobalParams) *cobra.Command {
 	return eventCmd
 }
 
-func eventRun(log complog.Component, config compconfig.Component, eventArgs *eventCliParams) error {
+func eventRun(log log.Component, config config.Component, eventArgs *cliParams) error {
 	stopper := startstop.NewSerialStopper()
 	defer stopper.Stop()
 
-	endpoints, dstContext, err := common.NewLogContextCompliance()
+	endpoints, dstContext, err := command.NewLogContextCompliance()
 	if err != nil {
 		return err
 	}
 
-	runPath := coreconfig.Datadog.GetString("compliance_config.run_path")
+	runPath := config.GetString("compliance_config.run_path")
 	reporter, err := event.NewLogReporter(stopper, eventArgs.sourceName, eventArgs.sourceType, runPath, endpoints, dstContext)
 	if err != nil {
 		return fmt.Errorf("failed to set up compliance log reporter: %w", err)
