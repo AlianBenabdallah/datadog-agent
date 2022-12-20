@@ -9,12 +9,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
+	"os"
 
-	"github.com/DataDog/datadog-agent/cmd/security-agent/app/common"
+	"github.com/DataDog/datadog-agent/cmd/security-agent/command"
 	"github.com/DataDog/datadog-agent/comp/core"
 	"github.com/DataDog/datadog-agent/comp/core/config"
 	"github.com/DataDog/datadog-agent/comp/core/log"
@@ -23,16 +22,16 @@ import (
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
 )
 
-type statusCliParams struct {
-	*common.GlobalParams
+type cliParams struct {
+	*command.GlobalParams
 
 	json            bool
 	prettyPrintJSON bool
 	file            string
 }
 
-func Commands(globalParams *common.GlobalParams) []*cobra.Command {
-	cliParams := &statusCliParams{
+func Commands(globalParams *command.GlobalParams) []*cobra.Command {
+	cliParams := &cliParams{
 		GlobalParams: globalParams,
 	}
 
@@ -44,8 +43,8 @@ func Commands(globalParams *common.GlobalParams) []*cobra.Command {
 			return fxutil.OneShot(runStatus,
 				fx.Supply(cliParams),
 				fx.Supply(core.BundleParams{
-					ConfigParams: config.NewParams("", config.WithSecurityAgentConfigFilePaths(globalParams.ConfPathArray), config.WithConfigLoadSecurityAgent(true)),
-					LogParams:    log.LogForOneShot(common.LoggerName, "off", true)}),
+					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfigFilePaths),
+					LogParams:    log.LogForOneShot(command.LoggerName, "off", true)}),
 				core.Bundle,
 			)
 		},
@@ -58,7 +57,7 @@ func Commands(globalParams *common.GlobalParams) []*cobra.Command {
 	return []*cobra.Command{statusCmd}
 }
 
-func runStatus(log log.Component, config config.Component, params *statusCliParams) error {
+func runStatus(log log.Component, config config.Component, params *cliParams) error {
 	fmt.Printf("Getting the status from the agent.\n")
 	var e error
 	var s string
