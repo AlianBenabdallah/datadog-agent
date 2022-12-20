@@ -6,45 +6,45 @@
 package command
 
 import (
-	coreconfig "github.com/DataDog/datadog-agent/pkg/config"
+	pkgconfig "github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/logs"
 	"github.com/DataDog/datadog-agent/pkg/logs/client"
 	logshttp "github.com/DataDog/datadog-agent/pkg/logs/client/http"
-	"github.com/DataDog/datadog-agent/pkg/logs/config"
-	"github.com/DataDog/datadog-agent/pkg/util/log"
+	logsconfig "github.com/DataDog/datadog-agent/pkg/logs/config"
+	pkglog "github.com/DataDog/datadog-agent/pkg/util/log"
 )
 
 const (
-	cwsIntakeOrigin config.IntakeOrigin = "cloud-workload-security"
+	cwsIntakeOrigin logsconfig.IntakeOrigin = "cloud-workload-security"
 )
 
-func NewLogContextCompliance() (*config.Endpoints, *client.DestinationsContext, error) {
-	logsConfigComplianceKeys := config.NewLogsConfigKeys("compliance_config.endpoints.", coreconfig.Datadog)
-	return NewLogContext(logsConfigComplianceKeys, "cspm-intake.", "compliance", config.DefaultIntakeOrigin, logs.AgentJSONIntakeProtocol)
+func NewLogContextCompliance() (*logsconfig.Endpoints, *client.DestinationsContext, error) {
+	logsConfigComplianceKeys := logsconfig.NewLogsConfigKeys("compliance_config.endpoints.", pkgconfig.Datadog)
+	return NewLogContext(logsConfigComplianceKeys, "cspm-intake.", "compliance", logsconfig.DefaultIntakeOrigin, logs.AgentJSONIntakeProtocol)
 }
 
 // This function will only be used on Linux. The only platforms where the runtime agent runs
-func NewLogContextRuntime() (*config.Endpoints, *client.DestinationsContext, error) { // nolint: deadcode, unused
-	logsConfigComplianceKeys := config.NewLogsConfigKeys("runtime_security_config.endpoints.", coreconfig.Datadog)
-	return NewLogContext(logsConfigComplianceKeys, "runtime-security-http-intake.logs.", "logs", cwsIntakeOrigin, config.DefaultIntakeProtocol)
+func NewLogContextRuntime() (*logsconfig.Endpoints, *client.DestinationsContext, error) { // nolint: deadcode, unused
+	logsConfigComplianceKeys := logsconfig.NewLogsConfigKeys("runtime_security_config.endpoints.", pkgconfig.Datadog)
+	return NewLogContext(logsConfigComplianceKeys, "runtime-security-http-intake.logs.", "logs", cwsIntakeOrigin, logsconfig.DefaultIntakeProtocol)
 }
 
-func NewLogContext(logsConfig *config.LogsConfigKeys, endpointPrefix string, intakeTrackType config.IntakeTrackType, intakeOrigin config.IntakeOrigin, intakeProtocol config.IntakeProtocol) (*config.Endpoints, *client.DestinationsContext, error) {
-	endpoints, err := config.BuildHTTPEndpointsWithConfig(logsConfig, endpointPrefix, intakeTrackType, intakeProtocol, intakeOrigin)
+func NewLogContext(logsConfig *logsconfig.LogsConfigKeys, endpointPrefix string, intakeTrackType logsconfig.IntakeTrackType, intakeOrigin logsconfig.IntakeOrigin, intakeProtocol logsconfig.IntakeProtocol) (*logsconfig.Endpoints, *client.DestinationsContext, error) {
+	endpoints, err := logsconfig.BuildHTTPEndpointsWithConfig(logsConfig, endpointPrefix, intakeTrackType, intakeProtocol, intakeOrigin)
 	if err != nil {
-		endpoints, err = config.BuildHTTPEndpoints(intakeTrackType, intakeProtocol, intakeOrigin)
+		endpoints, err = logsconfig.BuildHTTPEndpoints(intakeTrackType, intakeProtocol, intakeOrigin)
 		if err == nil {
 			httpConnectivity := logshttp.CheckConnectivity(endpoints.Main)
-			endpoints, err = config.BuildEndpoints(httpConnectivity, intakeTrackType, intakeProtocol, intakeOrigin)
+			endpoints, err = logsconfig.BuildEndpoints(httpConnectivity, intakeTrackType, intakeProtocol, intakeOrigin)
 		}
 	}
 
 	if err != nil {
-		return nil, nil, log.Errorf("Invalid endpoints: %v", err)
+		return nil, nil, pkglog.Errorf("Invalid endpoints: %v", err)
 	}
 
 	for _, status := range endpoints.GetStatus() {
-		log.Info(status)
+		pkglog.Info(status)
 	}
 
 	destinationsCtx := client.NewDestinationsContext()
