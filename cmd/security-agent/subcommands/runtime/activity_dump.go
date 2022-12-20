@@ -10,23 +10,22 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/spf13/cobra"
+	"go.uber.org/fx"
 
-	"github.com/DataDog/datadog-agent/cmd/security-agent/app/common"
+	"github.com/DataDog/datadog-agent/cmd/security-agent/command"
 	"github.com/DataDog/datadog-agent/comp/core"
-	compconfig "github.com/DataDog/datadog-agent/comp/core/config"
-	complog "github.com/DataDog/datadog-agent/comp/core/log"
-	secagent "github.com/DataDog/datadog-agent/pkg/security/agent"
+	"github.com/DataDog/datadog-agent/comp/core/config"
+	"github.com/DataDog/datadog-agent/comp/core/log"
+	"github.com/DataDog/datadog-agent/pkg/security/agent"
 	"github.com/DataDog/datadog-agent/pkg/security/api"
-	"github.com/DataDog/datadog-agent/pkg/security/config"
 	secconfig "github.com/DataDog/datadog-agent/pkg/security/config"
 	sprobe "github.com/DataDog/datadog-agent/pkg/security/probe"
 	"github.com/DataDog/datadog-agent/pkg/util/fxutil"
-	"github.com/spf13/cobra"
-	"go.uber.org/fx"
 )
 
 type activityDumpCliParams struct {
-	*common.GlobalParams
+	*command.GlobalParams
 
 	name                     string
 	containerID              string
@@ -42,7 +41,7 @@ type activityDumpCliParams struct {
 	remoteRequest            bool
 }
 
-func activityDumpCommands(globalParams *common.GlobalParams) []*cobra.Command {
+func activityDumpCommands(globalParams *command.GlobalParams) []*cobra.Command {
 	activityDumpCmd := &cobra.Command{
 		Use:   "activity-dump",
 		Short: "activity dump command",
@@ -55,15 +54,15 @@ func activityDumpCommands(globalParams *common.GlobalParams) []*cobra.Command {
 	return []*cobra.Command{activityDumpCmd}
 }
 
-func listCommands(globalParams *common.GlobalParams) []*cobra.Command {
+func listCommands(globalParams *command.GlobalParams) []*cobra.Command {
 	activityDumpListCmd := &cobra.Command{
 		Use:   "list",
 		Short: "get the list of running activity dumps",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fxutil.OneShot(listActivityDumps,
 				fx.Supply(core.BundleParams{
-					ConfigParams: compconfig.NewSecurityAgentParams(globalParams.ConfPathArray),
-					LogParams:    complog.LogForOneShot(common.LoggerName, "info", true)}),
+					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfigFilePaths),
+					LogParams:    log.LogForOneShot(command.LoggerName, "info", true)}),
 				core.Bundle,
 			)
 		},
@@ -72,7 +71,7 @@ func listCommands(globalParams *common.GlobalParams) []*cobra.Command {
 	return []*cobra.Command{activityDumpListCmd}
 }
 
-func stopCommands(globalParams *common.GlobalParams) []*cobra.Command {
+func stopCommands(globalParams *command.GlobalParams) []*cobra.Command {
 	cliParams := &activityDumpCliParams{
 		GlobalParams: globalParams,
 	}
@@ -84,8 +83,8 @@ func stopCommands(globalParams *common.GlobalParams) []*cobra.Command {
 			return fxutil.OneShot(stopActivityDump,
 				fx.Supply(cliParams),
 				fx.Supply(core.BundleParams{
-					ConfigParams: compconfig.NewSecurityAgentParams(globalParams.ConfPathArray),
-					LogParams:    complog.LogForOneShot(common.LoggerName, "info", true)}),
+					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfigFilePaths),
+					LogParams:    log.LogForOneShot(command.LoggerName, "info", true)}),
 				core.Bundle,
 			)
 		},
@@ -113,7 +112,7 @@ func stopCommands(globalParams *common.GlobalParams) []*cobra.Command {
 	return []*cobra.Command{activityDumpStopCmd}
 }
 
-func generateCommands(globalParams *common.GlobalParams) []*cobra.Command {
+func generateCommands(globalParams *command.GlobalParams) []*cobra.Command {
 	activityDumpGenerateCmd := &cobra.Command{
 		Use:   "generate",
 		Short: "generate command for activity dumps",
@@ -125,7 +124,7 @@ func generateCommands(globalParams *common.GlobalParams) []*cobra.Command {
 	return []*cobra.Command{activityDumpGenerateCmd}
 }
 
-func generateDumpCommands(globalParams *common.GlobalParams) []*cobra.Command {
+func generateDumpCommands(globalParams *command.GlobalParams) []*cobra.Command {
 	cliParams := &activityDumpCliParams{
 		GlobalParams: globalParams,
 	}
@@ -137,8 +136,8 @@ func generateDumpCommands(globalParams *common.GlobalParams) []*cobra.Command {
 			return fxutil.OneShot(generateActivityDump,
 				fx.Supply(cliParams),
 				fx.Supply(core.BundleParams{
-					ConfigParams: compconfig.NewSecurityAgentParams(globalParams.ConfPathArray),
-					LogParams:    complog.LogForOneShot(common.LoggerName, "info", true)}),
+					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfigFilePaths),
+					LogParams:    log.LogForOneShot(command.LoggerName, "info", true)}),
 				core.Bundle,
 			)
 		},
@@ -178,7 +177,7 @@ func generateDumpCommands(globalParams *common.GlobalParams) []*cobra.Command {
 		&cliParams.localStorageFormats,
 		"format",
 		[]string{},
-		fmt.Sprintf("local storage output formats. Available options are %v.", config.AllStorageFormats()),
+		fmt.Sprintf("local storage output formats. Available options are %v.", secconfig.AllStorageFormats()),
 	)
 	activityDumpGenerateDumpCmd.Flags().BoolVar(
 		&cliParams.remoteStorageCompression,
@@ -190,13 +189,13 @@ func generateDumpCommands(globalParams *common.GlobalParams) []*cobra.Command {
 		&cliParams.remoteStorageFormats,
 		"remote-format",
 		[]string{},
-		fmt.Sprintf("remote storage output formats. Available options are %v.", config.AllStorageFormats()),
+		fmt.Sprintf("remote storage output formats. Available options are %v.", secconfig.AllStorageFormats()),
 	)
 
 	return []*cobra.Command{activityDumpGenerateDumpCmd}
 }
 
-func generateEncodingCommands(globalParams *common.GlobalParams) []*cobra.Command {
+func generateEncodingCommands(globalParams *command.GlobalParams) []*cobra.Command {
 	cliParams := &activityDumpCliParams{
 		GlobalParams: globalParams,
 	}
@@ -208,8 +207,8 @@ func generateEncodingCommands(globalParams *common.GlobalParams) []*cobra.Comman
 			return fxutil.OneShot(generateEncodingFromActivityDump,
 				fx.Supply(cliParams),
 				fx.Supply(core.BundleParams{
-					ConfigParams: compconfig.NewSecurityAgentParams(globalParams.ConfPathArray),
-					LogParams:    complog.LogForOneShot(common.LoggerName, "info", true)}),
+					ConfigParams: config.NewSecurityAgentParams(globalParams.ConfigFilePaths),
+					LogParams:    log.LogForOneShot(command.LoggerName, "info", true)}),
 				core.Bundle,
 			)
 		},
@@ -238,7 +237,7 @@ func generateEncodingCommands(globalParams *common.GlobalParams) []*cobra.Comman
 		&cliParams.localStorageFormats,
 		"format",
 		[]string{},
-		fmt.Sprintf("local storage output formats. Available options are %v.", config.AllStorageFormats()),
+		fmt.Sprintf("local storage output formats. Available options are %v.", secconfig.AllStorageFormats()),
 	)
 	activityDumpGenerateEncodingCmd.Flags().BoolVar(
 		&cliParams.remoteStorageCompression,
@@ -250,7 +249,7 @@ func generateEncodingCommands(globalParams *common.GlobalParams) []*cobra.Comman
 		&cliParams.remoteStorageFormats,
 		"remote-format",
 		[]string{},
-		fmt.Sprintf("remote storage output formats. Available options are %v.", config.AllStorageFormats()),
+		fmt.Sprintf("remote storage output formats. Available options are %v.", secconfig.AllStorageFormats()),
 	)
 	activityDumpGenerateEncodingCmd.Flags().BoolVar(
 		&cliParams.remoteRequest,
@@ -262,8 +261,8 @@ func generateEncodingCommands(globalParams *common.GlobalParams) []*cobra.Comman
 	return []*cobra.Command{activityDumpGenerateEncodingCmd}
 }
 
-func generateActivityDump(log complog.Component, config compconfig.Component, activityDumpArgs *activityDumpCliParams) error {
-	client, err := secagent.NewRuntimeSecurityClient()
+func generateActivityDump(log log.Component, config config.Component, activityDumpArgs *activityDumpCliParams) error {
+	client, err := agent.NewRuntimeSecurityClient()
 	if err != nil {
 		return fmt.Errorf("unable to create a runtime security client instance: %w", err)
 	}
@@ -291,12 +290,12 @@ func generateActivityDump(log complog.Component, config compconfig.Component, ac
 	return nil
 }
 
-func generateEncodingFromActivityDump(log complog.Component, config compconfig.Component, activityDumpArgs *activityDumpCliParams) error {
+func generateEncodingFromActivityDump(log log.Component, config config.Component, activityDumpArgs *activityDumpCliParams) error {
 	var output *api.TranscodingRequestMessage
 
 	if activityDumpArgs.remoteRequest {
 		// send the encoding request to system-probe
-		client, err := secagent.NewRuntimeSecurityClient()
+		client, err := agent.NewRuntimeSecurityClient()
 		if err != nil {
 			return fmt.Errorf("encoding generation failed: %w", err)
 		}
@@ -364,8 +363,8 @@ func generateEncodingFromActivityDump(log complog.Component, config compconfig.C
 	return nil
 }
 
-func listActivityDumps(log complog.Component, config compconfig.Component) error {
-	client, err := secagent.NewRuntimeSecurityClient()
+func listActivityDumps(log log.Component, config config.Component) error {
+	client, err := agent.NewRuntimeSecurityClient()
 	if err != nil {
 		return fmt.Errorf("unable to create a runtime security client instance: %w", err)
 	}
@@ -393,13 +392,13 @@ func listActivityDumps(log complog.Component, config compconfig.Component) error
 
 func parseStorageRequest(activityDumpArgs *activityDumpCliParams) (*api.StorageRequestParams, error) {
 	// parse local storage formats
-	_, err := config.ParseStorageFormats(activityDumpArgs.localStorageFormats)
+	_, err := secconfig.ParseStorageFormats(activityDumpArgs.localStorageFormats)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't parse local storage formats %v: %v", activityDumpArgs.localStorageFormats, err)
 	}
 
 	// parse remote storage formats
-	_, err = config.ParseStorageFormats(activityDumpArgs.remoteStorageFormats)
+	_, err = secconfig.ParseStorageFormats(activityDumpArgs.remoteStorageFormats)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't parse remote storage formats %v: %v", activityDumpArgs.remoteStorageFormats, err)
 	}
@@ -412,8 +411,8 @@ func parseStorageRequest(activityDumpArgs *activityDumpCliParams) (*api.StorageR
 	}, nil
 }
 
-func stopActivityDump(log complog.Component, config compconfig.Component, activityDumpArgs *activityDumpCliParams) error {
-	client, err := secagent.NewRuntimeSecurityClient()
+func stopActivityDump(log log.Component, config config.Component, activityDumpArgs *activityDumpCliParams) error {
+	client, err := agent.NewRuntimeSecurityClient()
 	if err != nil {
 		return fmt.Errorf("unable to create a runtime security client instance: %w", err)
 	}
