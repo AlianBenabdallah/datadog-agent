@@ -419,7 +419,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
-require google.golang.org/grpc/examples v0.0.0-20221020162917-9127159caf5a
+require github.com/DataDog/go-libddwaf v0.0.0-20221118110754-0372d7c76b8a
 
 require gomodules.xyz/jsonpatch/v2 v2.2.0 // indirect
 

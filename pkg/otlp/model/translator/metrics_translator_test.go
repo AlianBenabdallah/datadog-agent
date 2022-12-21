@@ -16,7 +16,6 @@ package translator
 
 import (
 	"context"
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -26,10 +25,7 @@ import (
 	"go.opentelemetry.io/collector/pdata/pcommon"
 	"go.opentelemetry.io/collector/pdata/pmetric"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/DataDog/datadog-agent/pkg/otlp/model/attributes"
 	"github.com/DataDog/datadog-agent/pkg/otlp/model/source"
 	"github.com/DataDog/datadog-agent/pkg/quantile"
 	"github.com/DataDog/datadog-agent/pkg/quantile/summary"
@@ -676,7 +672,7 @@ const (
 	fallbackHostname = "fallbackHostname"
 )
 
-func createTestMetrics(additionalAttributes map[string]string, name, version string) pmetric.Metrics {
+func createTestIntCumulativeMonotonicMetrics() pmetric.Metrics {
 	md := pmetric.NewMetrics()
 	rms := md.ResourceMetrics()
 	rm := rms.AppendEmpty()
@@ -805,44 +801,28 @@ func createTestMetrics(additionalAttributes map[string]string, name, version str
 	met.SetEmptySum()
 	met.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 	met.Sum().SetIsMonotonic(true)
-	dpsInt = met.Sum().DataPoints()
-	dpsInt.EnsureCapacity(2)
-	dpInt = dpsInt.AppendEmpty()
-	dpInt.SetTimestamp(seconds(0))
-	dpInt.SetIntValue(4)
-	dpInt = dpsInt.AppendEmpty()
-	dpInt.SetTimestamp(seconds(2))
-	dpInt.SetIntValue(7)
 
-	// Double Sum (cumulative monotonic)
-	met = metricsArray.AppendEmpty()
-	met.SetName("double.cumulative.monotonic.sum")
+	values := []int64{10, 15, 20}
+	dpsInt := met.Sum().DataPoints()
+	dpsInt.EnsureCapacity(len(values))
+
+	startTs := int(getProcessStartTime()) + 1
+	for i, val := range values {
+		dpInt := dpsInt.AppendEmpty()
+		dpInt.SetStartTimestamp(seconds(startTs))
+		dpInt.SetTimestamp(seconds(startTs + i + 1))
+		dpInt.SetIntValue(val)
+	}
+	return md
+}
+
+func createTestDoubleCumulativeMonotonicMetrics() pmetric.Metrics {
+	md := pmetric.NewMetrics()
+	met := md.ResourceMetrics().AppendEmpty().ScopeMetrics().AppendEmpty().Metrics().AppendEmpty()
+	met.SetName(exampleDims.name)
 	met.SetEmptySum()
 	met.Sum().SetAggregationTemporality(pmetric.MetricAggregationTemporalityCumulative)
 	met.Sum().SetIsMonotonic(true)
-	dpsDouble = met.Sum().DataPoints()
-	dpsDouble.EnsureCapacity(2)
-	dpDouble = dpsDouble.AppendEmpty()
-	dpDouble.SetTimestamp(seconds(0))
-	dpDouble.SetDoubleValue(4)
-	dpDouble = dpsDouble.AppendEmpty()
-	dpDouble.SetTimestamp(seconds(2))
-	dpDouble.SetDoubleValue(4 + math.Pi)
-
-	// Summary
-	met = metricsArray.AppendEmpty()
-	met.SetName("summary")
-	met.SetEmptySummary()
-	slice := exampleSummaryDataPointSlice(seconds(0), 1, 1)
-	slice.CopyTo(met.Summary().DataPoints())
-
-	met = metricsArray.AppendEmpty()
-	met.SetName("summary")
-	met.SetEmptySummary()
-	slice = exampleSummaryDataPointSlice(seconds(2), 10_001, 101)
-	slice.CopyTo(met.Summary().DataPoints())
-	return md
-}
 
 func createTestIntCumulativeMonotonicMetrics() pmetric.Metrics {
 	md := pmetric.NewMetrics()
@@ -1169,8 +1149,6 @@ func TestMapExponentialHistogram(t *testing.T) {
 					Cnt: 30,
 				}, append(attrTags, ilTags...)),
 			},
-			expectedUnknownMetricType:                 1,
-			expectedUnsupportedAggregationTemporality: 1,
 		},
 		{
 			resourceAttributesAsTags:             true,
@@ -1207,8 +1185,6 @@ func TestMapExponentialHistogram(t *testing.T) {
 					Cnt: 30,
 				}, append(attrTags, ilTags...)),
 			},
-			expectedUnknownMetricType:                 1,
-			expectedUnsupportedAggregationTemporality: 1,
 		},
 		{
 			resourceAttributesAsTags:             true,
