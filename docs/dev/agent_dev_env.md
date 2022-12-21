@@ -162,7 +162,7 @@ sudo yum install systemd-devel
 
 ## Docker
 
-If you want to build a Docker image containing the Agent, or if you wan to run
+If you want to build a Docker image containing the Agent, or if you want to run
 [system and integration tests][testing] you need to run a recent version of Docker in your
 dev environment.
 
