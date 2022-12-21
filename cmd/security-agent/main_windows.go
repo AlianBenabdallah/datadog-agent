@@ -11,15 +11,14 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"path/filepath"
-
 	"time"
 
+	"github.com/DataDog/datadog-agent/cmd/internal/runcmd"
 	"github.com/DataDog/datadog-agent/cmd/security-agent/command"
-
+	"github.com/DataDog/datadog-agent/cmd/security-agent/subcommands"
 	"github.com/DataDog/datadog-agent/pkg/config"
 	"github.com/DataDog/datadog-agent/pkg/util/flavor"
 	"github.com/DataDog/datadog-agent/pkg/util/log"
-
 	"github.com/DataDog/datadog-agent/pkg/util/winutil"
 
 	"golang.org/x/sys/windows/svc"
@@ -67,10 +66,7 @@ func main() {
 	}
 	defer log.Flush()
 
-	if err = command.MakeCommand().Execute(); err != nil {
-		log.Error(err)
-		os.Exit(-1)
-	}
+	os.Exit(runcmd.Run(command.MakeCommand(subcommands.SecurityAgentSubcommands())))
 }
 
 type myservice struct{}
