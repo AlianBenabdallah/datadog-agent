@@ -31,7 +31,7 @@ func TestCommands(t *testing.T) {
 			cliInput: []string{"compliance", "event", "--tags", "test:tag"},
 			check: func(cliParams *cliParams, params core.BundleParams) {
 				require.Equal(t, command.LoggerName, params.LoggerName(), "logger name not matching")
-				require.Equal(t, "info", params.LogLevelFn(nil), "params.LogLevelFn not matching")
+				require.Equal(t, "info", params.LogLevelFn(nil), "log level not matching")
 				require.Equal(t, []string{"test:tag"}, cliParams.event.Tags, "tags arg input not matching")
 			},
 		},

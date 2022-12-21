@@ -251,7 +251,7 @@ func RunAgent(ctx context.Context, log log.Component, config config.Component, p
 		}
 	}
 
-	complianceAgent, err := compliance.StartCompliance(hostnameDetected, stopper, statsdClient)
+	complianceAgent, err := compliance.StartCompliance(log, config, hostnameDetected, stopper, statsdClient)
 	if err != nil {
 		return err
 	}
